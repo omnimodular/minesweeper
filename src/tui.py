@@ -107,8 +107,9 @@ class MinesweeperTUI:
         stdscr.addstr(controls_row + 1, 0, "  Arrow keys / hjkl: Move cursor", curses.color_pair(1))
         stdscr.addstr(controls_row + 2, 0, "  'r': Reveal cell", curses.color_pair(1))
         stdscr.addstr(controls_row + 3, 0, "  'm': Mark/unmark cell", curses.color_pair(1))
-        stdscr.addstr(controls_row + 4, 0, "  'F2': Restart game", curses.color_pair(1))
-        stdscr.addstr(controls_row + 5, 0, "  'ESC': Quit", curses.color_pair(1))
+        stdscr.addstr(controls_row + 4, 0, "  'c': Chord reveal (middle-click)", curses.color_pair(1))
+        stdscr.addstr(controls_row + 5, 0, "  'F2': Restart game", curses.color_pair(1))
+        stdscr.addstr(controls_row + 6, 0, "  'ESC': Quit", curses.color_pair(1))
         
         stdscr.refresh()
     
@@ -154,6 +155,12 @@ class MinesweeperTUI:
             elif key == ord('m') or key == ord('M'):
                 # Mark/unmark cell
                 self.game.flag(self.cursor_row, self.cursor_col)
+            elif key == ord('c') or key == ord('C'):
+                # Chord reveal (middle-click reveal)
+                success = self.game.chord_reveal(self.cursor_row, self.cursor_col)
+                if not success and self.game.game_state == GameState.LOST:
+                    # Reveal all mines when game is lost
+                    self.game.reveal_all_mines()
         
         return True
     

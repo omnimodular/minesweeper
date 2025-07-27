@@ -103,17 +103,12 @@ def main():
     try:
         print("🚩 Welcome to Minesweeper! 💣\n")
         
-        # Allow user to select difficulty or create custom game
-        choice = input("Select difficulty (y/n)? Default is Easy: ").strip().lower()
-        
-        if choice in ['y', 'yes']:
-            difficulty = select_difficulty()
-            if isinstance(difficulty, str):
-                game = create_game(difficulty)
-            else:
-                game = difficulty  # Custom game returned directly
+        # Always show difficulty selection menu
+        difficulty = select_difficulty()
+        if isinstance(difficulty, str):
+            game = create_game(difficulty)
         else:
-            game = create_game("easy")  # Default to easy
+            game = difficulty  # Custom game returned directly
         
         # Dependency Injection: Inject game into TUI
         tui = MinesweeperTUI(game)

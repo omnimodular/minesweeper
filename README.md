@@ -26,12 +26,14 @@ This project demonstrates **dependency injection** with a clean separation of co
 ## Features
 
 - **Complete Minesweeper Logic**: Cell revelation, mine placement, flagging, win/lose detection
+- **Chord Reveal**: Advanced middle-click reveal feature from minesweeperonline.com
 - **Smart Mine Placement**: First click is always safe (for random games)
 - **Explicit Board Patterns**: Support for predefined mine layouts using Gherkin docstrings
-- **Auto-reveal**: Empty areas expand automatically  
+- **Auto-reveal**: Empty areas expand automatically with cascade detection
+- **Complete Board Revelation**: All mines revealed automatically upon winning
 - **Beautiful TUI**: Modern text interface with emojis and clear formatting
 - **Multiple Difficulties**: Easy, Medium, Hard, and Custom board sizes
-- **BDD Test Coverage**: Comprehensive behavioral tests using pytest-bdd
+- **Comprehensive BDD Test Coverage**: 41 behavioral tests including chord reveal scenarios
 
 ## Installation
 
@@ -58,14 +60,18 @@ python src/main.py
 ### Game Features
 
 - **🚩 Flag/Unflag**: Mark suspected mine locations
-- **💣 Mine Detection**: Numbers show adjacent mine counts  
+- **💣 Mine Detection**: Numbers show adjacent mine counts
+- **⚡ Chord Reveal**: Middle-click reveal for advanced play
+- **🔄 Auto-Reveal**: Empty areas expand automatically
 - **🎯 Multiple Difficulties**: Easy (9x9), Medium (16x16), Hard (16x30)
 - **🎮 Game Controls**: New game, quit, custom board sizes
+- **🏆 Complete Victory**: All mines revealed upon winning
 
 ### Commands in TUI
 
 - `r <row> <col>` - Reveal cell at position
-- `f <row> <col>` - Toggle flag at position  
+- `f <row> <col>` - Toggle flag at position
+- `c <row> <col>` - Chord reveal (middle-click reveal) at position
 - `n` - Start new game
 - `q` - Quit game
 
@@ -121,7 +127,9 @@ Scenario: Initialize game with explicit board pattern
   And there should be 3 mines
 ```
 
-## Game Rules
+## Game Logic & Rules
+
+### Basic Rules
 
 1. **Objective**: Clear all cells without mines
 2. **Numbers**: Show count of adjacent mines (1-8)
@@ -129,6 +137,68 @@ Scenario: Initialize game with explicit board pattern
 4. **Flags**: Mark suspected mine locations
 5. **Auto-reveal**: Clicking empty cells reveals connected areas
 6. **Win Condition**: All non-mine cells revealed
+
+### Advanced Features
+
+#### Chord Reveal (Middle-Click Reveal)
+A powerful feature inspired by minesweeperonline.com that allows quick revealing of multiple cells:
+
+**How it works:**
+1. Reveal a numbered cell (e.g., showing "3")
+2. Flag exactly 3 adjacent cells where you think mines are
+3. Chord reveal the numbered cell to instantly reveal all remaining unflagged neighbors
+4. If your flags are correct, safe cells are revealed
+5. If you flagged incorrectly and there's a mine in unflagged neighbors, you lose!
+
+**Usage:**
+```python
+# After revealing and flagging around a numbered cell
+game.chord_reveal(row, col)  # Returns True if successful, False if hit mine
+```
+
+**Safety Features:**
+- Only works on already revealed cells
+- Only activates when flag count matches the cell's number
+- Fails safely if wrong number of flags
+- Properly handles mine hits and game state transitions
+
+#### Smart Mine Placement
+- **First Click Protection**: First revealed cell is guaranteed safe
+- **Neighbor Protection**: First click's neighbors are also mine-free
+- **Random Distribution**: Mines placed randomly in remaining safe areas
+
+#### Auto-Reveal Mechanics
+- **Empty Cell Cascade**: Revealing a cell with 0 adjacent mines automatically reveals all connected empty areas
+- **Boundary Detection**: Auto-reveal stops at numbered cells (mine boundaries)
+- **Recursive Algorithm**: Uses flood-fill algorithm for efficient area revelation
+
+#### Win Detection & Board Revelation
+- **Automatic Detection**: Game instantly detects when all safe cells are revealed
+- **Complete Board Reveal**: Upon winning, all mines are automatically revealed
+- **State Management**: Game state transitions cleanly between PLAYING, WON, and LOST
+
+### Game Flow Examples
+
+#### Standard Play
+```
+1. game.reveal(4, 4)     # Safe first click
+2. game.flag(3, 3)       # Mark suspected mine
+3. game.reveal(5, 5)     # Reveal another cell
+4. game.chord_reveal(4, 4) # Quick reveal if flags match
+```
+
+#### Pattern-Based Setup
+```python
+game.setup_board_from_pattern("""
+*...*
+.1.1.
+..2..
+.1.1.
+*...*
+""")
+# Numbers calculated automatically
+# Adjacent mine counts computed
+```
 
 ## BDD Test Coverage
 
@@ -138,9 +208,19 @@ The test suite covers:
 - ✅ Cell revelation mechanics
 - ✅ Mine placement and detection
 - ✅ Flag/unflag operations
-- ✅ Win/lose condition detection
-- ✅ Auto-reveal functionality
+- ✅ **Chord reveal functionality** (8 comprehensive scenarios)
+- ✅ Win/lose condition detection with complete board revelation
+- ✅ Auto-reveal functionality and cascading
 - ✅ Edge cases and error handling
+
+### Chord Reveal Test Coverage
+- ✅ Correct flags reveal adjacent cells
+- ✅ Incorrect flag count prevents activation
+- ✅ Works only on revealed cells
+- ✅ Mine hits properly end game
+- ✅ Mixed flagging scenarios
+- ✅ Triggers auto-reveal cascades
+- ✅ Can complete the game (win condition)
 
 ## Architecture Benefits
 
@@ -277,11 +357,23 @@ This design enables comprehensive BDD testing of the TUI while maintaining the c
 
 ### Key Methods
 
+#### Core Game Actions
 - `game.reveal(row, col) -> bool` - Reveal cell, returns success
 - `game.flag(row, col) -> bool` - Toggle flag, returns success
+- `game.chord_reveal(row, col) -> bool` - Chord reveal (middle-click), returns success
+
+#### Game Setup & State
 - `game.setup_board_from_pattern(pattern)` - Set explicit board layout
-- `game.get_game_state() -> GameState` - Current game status
+- `game.get_game_state() -> GameState` - Current game status (PLAYING/WON/LOST)
 - `game.reset()` - Start fresh game
+- `game.reveal_all_mines()` - Reveal all mines (called automatically on win)
+
+#### Game Information
+- `game.get_remaining_mines() -> int` - Mines remaining (total - flags)
+- `game.is_game_over() -> bool` - Check if game ended
+- `game.get_cell_info(row, col) -> dict` - Get cell details
+
+#### TUI Interface
 - `tui.run()` - Start the text interface
 
 ## Dependencies

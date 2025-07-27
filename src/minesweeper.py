@@ -259,6 +259,66 @@ class Minesweeper:
         
         return True
     
+    def chord_reveal(self, row: int, col: int) -> bool:
+        """
+        Chord reveal (middle-click reveal) - reveals all non-flagged adjacent cells
+        if the number of flagged adjacent cells matches the cell's number.
+        
+        Args:
+            row: Row of the cell to chord reveal
+            col: Column of the cell to chord reveal
+            
+        Returns:
+            True if the chord reveal was successful, False otherwise
+        """
+        if self.game_state != GameState.PLAYING:
+            return False
+        
+        if not (0 <= row < self.rows and 0 <= col < self.cols):
+            return False
+        
+        cell = self.grid[row][col]
+        
+        # Can only chord reveal on already revealed cells
+        if cell.state != CellState.REVEALED:
+            return False
+        
+        # Can't chord reveal on mines (shouldn't happen since mines end the game)
+        if cell.is_mine:
+            return False
+        
+        # Get all neighbors
+        neighbors = self._get_neighbors(row, col)
+        
+        # Count flagged neighbors
+        flagged_count = 0
+        for neighbor_row, neighbor_col in neighbors:
+            neighbor_cell = self.grid[neighbor_row][neighbor_col]
+            if neighbor_cell.state == CellState.FLAGGED:
+                flagged_count += 1
+        
+        # Only proceed if the number of flags matches the cell's number
+        if flagged_count != cell.adjacent_mines:
+            return False
+        
+        # Reveal all non-flagged, non-revealed neighbors
+        success = True
+        for neighbor_row, neighbor_col in neighbors:
+            neighbor_cell = self.grid[neighbor_row][neighbor_col]
+            if neighbor_cell.state == CellState.HIDDEN:
+                # Reveal this cell
+                result = self._reveal_cell(neighbor_row, neighbor_col)
+                if not result:
+                    success = False
+                    break  # Hit a mine, game over
+        
+        # Check win condition only if all reveals were successful
+        if success and self._are_all_safe_cells_revealed():
+            self.game_state = GameState.WON
+            self.reveal_all_mines()  # Reveal all mines when the game is won
+        
+        return success
+    
     def get_remaining_mines(self) -> int:
         """Get the number of remaining mines (total mines - flags placed)."""
         return self.total_mines - self.flags_placed
