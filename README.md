@@ -6,12 +6,14 @@ A complete Python implementation of the classic Minesweeper game with comprehens
 
 ```
 minesweeper/
-├── features/           # BDD feature files (Gherkin scenarios)
+├── features/          # BDD feature files (Gherkin scenarios)
 ├── tests/             # Test implementations and step definitions
-├── src/               # Source code
-│   ├── minesweeper.py # Core game logic
+├── src/minesweeper/   # Installable Python package
+│   ├── __init__.py    # Public game API
+│   ├── game.py        # Core game logic
 │   ├── tui.py         # Text User Interface
-│   └── main.py        # Entry point with dependency injection
+│   └── main.py        # Console entry point with dependency injection
+├── pyproject.toml     # Package metadata, dependencies, and pytest configuration
 └── README.md          # This file
 ```
 
@@ -19,7 +21,7 @@ minesweeper/
 
 This project demonstrates **dependency injection** with a clean separation of concerns:
 
-- **Game Logic** (`minesweeper.py`): Pure business logic, UI-agnostic
+- **Game Logic** (`game.py`): Pure business logic, UI-agnostic
 - **TUI** (`tui.py`): Text interface that depends on game logic
 - **Main** (`main.py`): Entry point that injects game into TUI
 
@@ -41,20 +43,24 @@ This project demonstrates **dependency injection** with a clean separation of co
 # Clone or navigate to project directory
 cd minesweeper
 
-# Install dependencies (if using virtual environment)
-pip install pytest pytest-bdd
+# Create and activate a virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
 
-# Or install from requirements
-pip install -r requirements.txt
+# Install the package with test and lint dependencies
+python3 -m pip install -e '.[test,lint]'
 ```
+
+All dependencies are declared in `pyproject.toml`. For a game-only installation,
+use `python3 -m pip install .` in your active environment.
 
 ## Usage
 
 ### Playing the Game
 
 ```bash
-# Run the main game with TUI
-python src/main.py
+# Run the installed command with the virtual environment activated
+minesweeper
 ```
 
 ### Game Features
@@ -78,15 +84,17 @@ python src/main.py
 ### Programmatic Usage
 
 ```python
-from src.minesweeper import Minesweeper
-from src.tui import MinsweeperTUI
+import curses
+
+from minesweeper import Minesweeper
+from minesweeper.tui import MinesweeperTUI
 
 # Create game (dependency)
 game = Minesweeper(9, 9, 10)
 
 # Inject into TUI (dependent)
-tui = MinsweeperTUI(game)
-tui.run()
+tui = MinesweeperTUI(game)
+curses.wrapper(tui.run)
 
 # Or use explicit board patterns
 game.setup_board_from_pattern("""
@@ -99,14 +107,21 @@ game.setup_board_from_pattern("""
 ### Running BDD Tests
 
 ```bash
-# Run all BDD tests
-pytest tests/
+# Run all BDD tests with the virtual environment activated
+python3 -m pytest
 
 # Run with verbose output
-pytest tests/ -v
+python3 -m pytest -v
 
-# Run specific feature
-pytest tests/test_game_initialization.py -v
+# Run a specific feature
+python3 -m pytest tests/test_game_initialization.py -v
+```
+
+Run Ruff and Pylint over the source and tests:
+
+```bash
+python3 -m ruff check src tests
+python3 -m pylint src tests
 ```
 
 ## BDD Feature Examples
@@ -351,7 +366,7 @@ This design enables comprehensive BDD testing of the TUI while maintaining the c
 ### Core Classes
 
 - `Minesweeper(rows=9, cols=9, mines=10)` - Main game class
-- `MinsweeperTUI(game)` - Text user interface
+- `MinesweeperTUI(game)` - Text user interface
 - `CellState` - Enum: HIDDEN, REVEALED, FLAGGED  
 - `GameState` - Enum: PLAYING, WON, LOST
 
@@ -379,5 +394,5 @@ This design enables comprehensive BDD testing of the TUI while maintaining the c
 ## Dependencies
 
 - **Runtime**: Python 3.7+ (uses standard library only)
-- **Testing**: pytest, pytest-bdd
-- **Development**: No additional dependencies
+- **Testing**: pytest and pytest-bdd, installed through the `test` extra
+- **Linting**: Ruff and Pylint, installed through the `lint` extra
