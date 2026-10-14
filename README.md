@@ -381,7 +381,3 @@ This design enables comprehensive BDD testing of the TUI while maintaining the c
 - **Runtime**: Python 3.7+ (uses standard library only)
 - **Testing**: pytest, pytest-bdd
 - **Development**: No additional dependencies
-
-## License
-
-This project is open source and available under the MIT License.
